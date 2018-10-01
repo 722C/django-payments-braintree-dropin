@@ -62,6 +62,7 @@ class PaymentForm(BasePaymentForm):
     def save(self):
         self.payment.transaction_id = self.result.transaction.id
         if self.provider.submit_for_settlement:
+            self.payment.captured_amount = self.payment.total
             self.payment.change_status(PaymentStatus.CONFIRMED)
         else:
             self.payment.change_status(PaymentStatus.PREAUTH)
