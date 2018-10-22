@@ -1,7 +1,7 @@
 
 from django.shortcuts import redirect
 
-from payments import RedirectNeeded
+from payments import RedirectNeeded, PaymentStatus
 from payments.core import BasicProvider
 from .forms import PaymentForm
 
