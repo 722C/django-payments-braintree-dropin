@@ -31,6 +31,7 @@ class PaymentForm(BasePaymentForm):
                 self.result = self.provider.gateway.transaction.sale({
                     'amount': str(self.payment.total),
                     'payment_method_nonce': data['payment_method_nonce'],
+                    'order_id': self.payment.pk,
                     'options': {
                         'submit_for_settlement': self.provider.submit_for_settlement,
                     },
