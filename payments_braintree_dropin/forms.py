@@ -28,10 +28,13 @@ class PaymentForm(BasePaymentForm):
 
         if not self.errors and not self.payment.transaction_id:
             try:
+                order_id = self.payment.pk
+                if getattr(getattr(self.payment, 'order', None), 'pk', None):
+                    order_id = self.payment.order.id
                 self.result = self.provider.gateway.transaction.sale({
                     'amount': str(self.payment.total),
                     'payment_method_nonce': data['payment_method_nonce'],
-                    'order_id': self.payment.pk,
+                    'order_id': order_id,
                     'options': {
                         'submit_for_settlement': self.provider.submit_for_settlement,
                     },
