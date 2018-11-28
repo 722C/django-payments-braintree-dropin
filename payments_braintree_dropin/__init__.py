@@ -85,7 +85,6 @@ class BraintreeDropinProvider(BasicProvider):
         try:
             result = self.gateway.transaction.submit_for_settlement(
                 payment.transaction_id, amount)
-            print(result.message)
             payment.attrs.capture = '{}'.format(result.transaction)
             if not result.is_success:
                 raise Exception()
