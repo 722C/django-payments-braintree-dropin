@@ -1,7 +1,7 @@
 
 from django.shortcuts import redirect
 
-from payments import RedirectNeeded, PaymentStatus
+from payments import RedirectNeeded, PaymentStatus, PaymentError
 from payments.core import BasicProvider
 from .forms import PaymentForm
 
@@ -85,6 +85,7 @@ class BraintreeDropinProvider(BasicProvider):
         try:
             result = self.gateway.transaction.submit_for_settlement(
                 payment.transaction_id, amount)
+            print(result.message)
             payment.attrs.capture = '{}'.format(result.transaction)
             if not result.is_success:
                 raise Exception()
