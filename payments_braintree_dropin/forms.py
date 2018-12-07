@@ -4,9 +4,12 @@ from django import forms
 
 from payments import PaymentStatus, FraudStatus
 from payments.forms import PaymentForm as BasePaymentForm
-from .widgets import BraintreeDropinWidget
-from . import RedirectNeeded
 
+from ..payments_braintree_dropin_log.utils import (
+    log_captured, log_error, log_rejected, log_preauthorized)
+
+from . import RedirectNeeded
+from .widgets import BraintreeDropinWidget
 from .utils import BRAINTREE_RISK_TO_FRAUD
 
 
@@ -21,6 +24,10 @@ class PaymentForm(BasePaymentForm):
         self.fields['payment_method_nonce'] = forms.CharField(widget=widget)
         if self.is_bound and not self.data.get('payment_method_nonce'):
             self.payment.change_status('rejected')
+            log_rejected(self.payment,
+                         self.payment.transaction_id or self.payment.id,
+                         'Failed to get payment method nonce.',
+                         self.payment.currency, primary=total)
             raise RedirectNeeded(self.payment.get_failure_url())
 
     def clean(self):
@@ -40,12 +47,26 @@ class PaymentForm(BasePaymentForm):
                     },
                 })
                 if not self.result.is_success:
-                    self.payment.attrs.transaction = '{}\n{}\n{}'.format(json.dumps(
-                        self.result.params), self.result.errors.deep_errors,
-                        self.result.transaction)
+                    self.payment.attrs.transaction = '{}\n{}\n{}'.format(
+                        json.dumps(self.result.params),
+                        self.result.errors.deep_errors,
+                        self.result.transaction
+                    )
                     self._errors['__all__'] = self.error_class(
                         [self.result.message])
                     self.payment.change_status(PaymentStatus.REJECTED)
+                    log_rejected(
+                        self.payment,
+                        self.result.id,
+                        self.result.message,
+                        payment.currency,
+                        primary=self.payment.total,
+                        transaction='{}\n{}\n{}'.format(
+                            json.dumps(self.result.params),
+                            self.result.errors.deep_errors,
+                            self.result.transaction,
+                        ),
+                    )
                 else:
                     self.payment.attrs.transaction = '{}'.format(
                         self.result.transaction)
@@ -60,6 +81,13 @@ class PaymentForm(BasePaymentForm):
                 self._errors['__all__'] = self.error_class([message])
                 self.payment.attrs.error = message
                 self.payment.change_status(PaymentStatus.ERROR)
+                log_error(
+                    self.payment,
+                    self.payment.transaction_id or self.payment.id,
+                    message, self.payment.currency,
+                    primary=self.payment.total,
+                    error=message,
+                )
 
         return data
 
@@ -68,5 +96,11 @@ class PaymentForm(BasePaymentForm):
         if self.provider.submit_for_settlement:
             self.payment.captured_amount = self.payment.total
             self.payment.change_status(PaymentStatus.CONFIRMED)
+            log_captured(self.payment, self.result.transaction.id, '',
+                         self.payment.currency, primary=self.payment.total,
+                         transaction='{}'.format(self.result.transaction))
         else:
             self.payment.change_status(PaymentStatus.PREAUTH)
+            log_preauthorized(self.payment, self.result.transaction.id, '',
+                              self.payment.currency, primary=self.payment.total,
+                              transaction='{}'.format(self.result.transaction))

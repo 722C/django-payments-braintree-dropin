@@ -1,11 +1,14 @@
-
 from django.shortcuts import redirect
 
-from payments import RedirectNeeded, PaymentStatus, PaymentError
+from payments import PaymentError, PaymentStatus, RedirectNeeded
 from payments.core import BasicProvider
-from .forms import PaymentForm
 
 from braintree import BraintreeGateway, Configuration, Environment
+
+from ..payments_braintree_dropin_log.utils import (
+    log_captured, log_refunded, log_error)
+
+from .forms import PaymentForm
 
 
 class BraintreeDropinProvider(BasicProvider):
@@ -88,18 +91,37 @@ class BraintreeDropinProvider(BasicProvider):
             payment.attrs.capture = '{}'.format(result.transaction)
             if not result.is_success:
                 raise Exception()
+            log_captured(payment, result.transaction.id, '', payment.currency,
+                         primary=amount, capture='{}'.format(
+                             result.transaction))
         except Exception as e:
             payment.change_status(PaymentStatus.ERROR)
+            message = getattr(e, 'message', '{}'.format(e))
+            log_error(payment, payment.transaction_id, message,
+                      payment.currency, primary=amount)
             raise PaymentError('Payment cannot be captured')
         return amount
 
     def release(self, payment):
         result = self.gateway.transaction.void(payment.transaction_id)
         payment.attrs.release = '{}'.format(result.transaction)
+        if result.is_success:
+            log_refunded(payment, result.transaction.id, '',
+                         payment.currency, primary=payment.total,
+                         release='{}'.format(result.transaction))
+        else:
+            log_error(payment, payment.transaction_id, result.message,
+                      payment.currency, primary=payment.total)
 
     def refund(self, payment, amount=None):
         amount = amount or payment.total
         result = self.gateway.transaction.refund(
             payment.transaction_id, amount)
         payment.attrs.refund = '{}'.format(result.transaction)
+        if result.is_success:
+            log_refunded(payment, result.transaction.id, '', payment.currency,
+                         primary=amount, refund='{}'.format(result.transaction))
+        else:
+            log_error(payment, payment.transaction_id, result.message,
+                      payment.currency, primary=payment.total)
         return amount
