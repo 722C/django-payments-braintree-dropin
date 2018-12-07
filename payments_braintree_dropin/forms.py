@@ -57,7 +57,7 @@ class PaymentForm(BasePaymentForm):
                     self.payment.change_status(PaymentStatus.REJECTED)
                     log_rejected(
                         self.payment,
-                        self.result.id,
+                        self.payment.transaction_id or self.payment.id,
                         self.result.message,
                         payment.currency,
                         primary=self.payment.total,

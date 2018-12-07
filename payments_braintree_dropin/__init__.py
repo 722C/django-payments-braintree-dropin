@@ -99,7 +99,8 @@ class BraintreeDropinProvider(BasicProvider):
             message = getattr(e, 'message', '{}'.format(e))
             log_error(payment, payment.transaction_id, message,
                       payment.currency, primary=amount)
-            raise PaymentError('Payment cannot be captured')
+            raise PaymentError(
+                'Payment cannot be captured: {}'.format(message))
         return amount
 
     def release(self, payment):
@@ -112,6 +113,8 @@ class BraintreeDropinProvider(BasicProvider):
         else:
             log_error(payment, payment.transaction_id, result.message,
                       payment.currency, primary=payment.total)
+            raise PaymentError(
+                "Payment couldn't be released: {}".format(result.message))
 
     def refund(self, payment, amount=None):
         amount = amount or payment.total
@@ -124,4 +127,6 @@ class BraintreeDropinProvider(BasicProvider):
         else:
             log_error(payment, payment.transaction_id, result.message,
                       payment.currency, primary=payment.total)
+            raise PaymentError(
+                "Payment couldn't be refunded: {}".format(result.message))
         return amount
