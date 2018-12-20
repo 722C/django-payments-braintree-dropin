@@ -27,7 +27,7 @@ class PaymentForm(BasePaymentForm):
             log_rejected(self.payment,
                          self.payment.transaction_id or self.payment.id,
                          'Failed to get payment method nonce.',
-                         self.payment.currency, primary=total)
+                         self.payment.currency, primary=self.payment.total)
             raise RedirectNeeded(self.payment.get_failure_url())
 
     def clean(self):
@@ -59,7 +59,7 @@ class PaymentForm(BasePaymentForm):
                         self.payment,
                         self.payment.transaction_id or self.payment.id,
                         self.result.message,
-                        payment.currency,
+                        self.payment.currency,
                         primary=self.payment.total,
                         transaction='{}\n{}\n{}'.format(
                             json.dumps(self.result.params),
