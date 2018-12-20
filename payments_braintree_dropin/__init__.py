@@ -122,8 +122,18 @@ class BraintreeDropinProvider(BasicProvider):
             payment.transaction_id, amount)
         payment.attrs.refund = '{}'.format(result.transaction)
         if result.is_success:
-            log_refunded(payment, result.transaction.id, '', payment.currency,
-                         primary=amount, refund='{}'.format(result.transaction))
+            if hasattr(payment, 'additional_details'):
+                log_refunded(payment, result.transaction.id, '',
+                             payment.currency,
+                             primary=payment.additional_details['primary'],
+                             tax=payment.additional_details['tax'],
+                             delivery=payment.additional_details['delivery'],
+                             discount=payment.additional_details['discount'],
+                             refund='{}'.format(result.transaction))
+            else:
+                log_refunded(payment, result.transaction.id, '',
+                             payment.currency, primary=amount,
+                             refund='{}'.format(result.transaction))
         else:
             log_error(payment, payment.transaction_id, result.message,
                       payment.currency, primary=payment.total)
