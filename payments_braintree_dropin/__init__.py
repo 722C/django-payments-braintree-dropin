@@ -91,8 +91,25 @@ class BraintreeDropinProvider(BasicProvider):
             payment.attrs.capture = '{}'.format(result.transaction)
             if not result.is_success:
                 raise Exception()
+            primary = amount
+            tax = 0
+            delivery = 0
+            discount = 0
+            if primary == payment.total:
+                if hasattr(self.payment, 'tax'):
+                    tax = payment.tax
+                    primary -= tax
+                if hasattr(getattr(self.payment, 'order', None),
+                           'shipping_price_gross'):
+                    delivery = payment.order.shipping_price_gross.amount
+                    primary -= delivery
+                if hasattr(getattr(self.payment, 'order', None),
+                           'discount_amount'):
+                    discount = payment.order.discount_amount.amount * -1
+                    primary -= discount
             log_captured(payment, result.transaction.id, '', payment.currency,
-                         primary=amount, capture='{}'.format(
+                         primary=primary, tax=tax, delivery=delivery,
+                         discount=discount, capture='{}'.format(
                              result.transaction))
         except Exception as e:
             payment.change_status(PaymentStatus.ERROR)

@@ -96,11 +96,43 @@ class PaymentForm(BasePaymentForm):
         if self.provider.submit_for_settlement:
             self.payment.captured_amount = self.payment.total
             self.payment.change_status(PaymentStatus.CONFIRMED)
+            primary = self.payment.total
+            tax = 0
+            delivery = 0
+            discount = 0
+            if hasattr(self.payment, 'tax'):
+                tax = self.payment.tax
+                primary -= tax
+            if hasattr(getattr(self.payment, 'order', None),
+                       'shipping_price_gross'):
+                delivery = self.payment.order.shipping_price_gross.amount
+                primary -= delivery
+            if hasattr(getattr(self.payment, 'order', None),
+                       'discount_amount'):
+                discount = self.payment.order.discount_amount.amount * -1
+                primary -= discount
             log_captured(self.payment, self.result.transaction.id, '',
-                         self.payment.currency, primary=self.payment.total,
+                         self.payment.currency, primary=primary, tax=tax,
+                         delivery=delivery, discount=discount,
                          transaction='{}'.format(self.result.transaction))
         else:
             self.payment.change_status(PaymentStatus.PREAUTH)
+            primary = self.payment.total
+            tax = 0
+            delivery = 0
+            discount = 0
+            if hasattr(self.payment, 'tax'):
+                tax = self.payment.tax
+                primary -= tax
+            if hasattr(getattr(self.payment, 'order', None),
+                       'shipping_price_gross'):
+                delivery = self.payment.order.shipping_price_gross.amount
+                primary -= delivery
+            if hasattr(getattr(self.payment, 'order', None),
+                       'discount_amount'):
+                discount = self.payment.order.discount_amount.amount * -1
+                primary -= discount
             log_preauthorized(self.payment, self.result.transaction.id, '',
-                              self.payment.currency, primary=self.payment.total,
+                              self.payment.currency, primary=primary, tax=tax,
+                              delivery=delivery, discount=discount,
                               transaction='{}'.format(self.result.transaction))
