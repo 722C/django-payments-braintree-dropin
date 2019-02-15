@@ -96,14 +96,14 @@ class BraintreeDropinProvider(BasicProvider):
             delivery = 0
             discount = 0
             if primary == payment.total:
-                if hasattr(self.payment, 'tax'):
+                if hasattr(payment, 'tax'):
                     tax = payment.tax
                     primary -= tax
-                if hasattr(getattr(self.payment, 'order', None),
+                if hasattr(getattr(payment, 'order', None),
                            'shipping_price_gross'):
                     delivery = payment.order.shipping_price_gross.amount
                     primary -= delivery
-                if hasattr(getattr(self.payment, 'order', None),
+                if hasattr(getattr(payment, 'order', None),
                            'discount_amount'):
                     discount = payment.order.discount_amount.amount * -1
                     primary -= discount
