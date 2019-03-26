@@ -24,6 +24,8 @@ class BraintreeDropinProvider(BasicProvider):
             'google_pay_merchant_id', '')
         self.submit_for_settlement = kwargs.pop(
             'submit_for_settlement', True)
+        self.paypal_flow = kwargs.pop(
+            'paypal_flow', '')
         self.gateway = BraintreeGateway(
             Configuration(
                 (Environment.Sandbox if self.environment ==

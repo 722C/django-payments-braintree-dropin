@@ -56,6 +56,16 @@ window.addEventListener('load', function() {
     };
   }
 
+  if (inputField.dataset.paypalflow) {
+    braintreeConfiguration.paypal = {
+      flow: inputField.dataset.paypalflow,
+    };
+    if (inputField.dataset.paypalflow === 'checkout') {
+      braintreeConfiguration.paypal.amount = inputField.dataset.amount;
+      braintreeConfiguration.paypal.currency = inputfield.dataset.currency;
+    }
+  }
+
   braintree.dropin.create(braintreeConfiguration, function(createErr, instance) {
     form.addEventListener('submit', function(e) {
       e.preventDefault();
