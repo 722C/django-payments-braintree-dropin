@@ -21,5 +21,5 @@ class BraintreeDropinWidget(HiddenInput):
 
     class Media:
         js = ['https://js.braintreegateway.com/web/dropin/'
-              '1.11.0/js/dropin.min.js',
+              '1.16.0/js/dropin.min.js',
               'payments-braintree-dropin/dropin.js']
