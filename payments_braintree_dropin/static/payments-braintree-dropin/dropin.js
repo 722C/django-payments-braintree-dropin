@@ -75,6 +75,12 @@ window.addEventListener('load', function() {
           form.submit();
         } else {
           console.error(requestPaymentMethodErr);
+          for (let i in form.getElementsByTagName('button')) {
+            let ele = form.getElementsByTagName('button')[i];
+            if (ele.type === 'submit') {
+              ele.disabled = false;
+            }
+          }
         }
       });
     });
