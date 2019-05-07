@@ -75,7 +75,10 @@ window.addEventListener('load', function() {
           form.submit();
         } else {
           console.error(requestPaymentMethodErr);
-          form.querySelector('#order-and-pay-button').disabled = false;
+          let button = form.querySelector('button[type="submit"]');
+          if (button) {
+            button.disabled = false;
+          }
         }
       });
     });
