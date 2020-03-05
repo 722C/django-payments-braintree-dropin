@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 
 from django import forms
 
@@ -36,8 +37,24 @@ class PaymentForm(BasePaymentForm):
         if not self.errors and not self.payment.transaction_id:
             try:
                 order_id = self.payment.pk
+                order = None
                 if getattr(getattr(self.payment, 'order', None), 'pk', None):
                     order_id = self.payment.order.id
+                    order = self.payment.order
+
+                primary = self.payment.total
+                tax = Decimal(0)
+                delivery = Decimal(0)
+                discount = Decimal(0)
+                if order:
+                    if hasattr(self.payment, 'tax'):
+                        tax = self.payment.tax
+                        primary -= tax
+                    delivery = self.payment.order.shipping_price_gross.amount
+                    primary -= delivery
+                    discount = self.payment.order.discount_amount.amount * -1
+                    primary -= discount
+                    
                 self.result = self.provider.gateway.transaction.sale({
                     'amount': str(self.payment.total),
                     'payment_method_nonce': data['payment_method_nonce'],
@@ -45,6 +62,10 @@ class PaymentForm(BasePaymentForm):
                     'options': {
                         'submit_for_settlement': self.provider.submit_for_settlement,
                     },
+                    'purchase_order_number': order_id,
+                    'discount_amount': abs(discount),
+                    'shipping_amount': delivery,
+                    'tax_amount': tax,
                 })
                 if not self.result.is_success:
                     self.payment.attrs.transaction = '{}\n{}\n{}'.format(
