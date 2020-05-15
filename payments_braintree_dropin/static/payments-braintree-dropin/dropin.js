@@ -68,6 +68,9 @@ window.addEventListener('load', function() {
 
   braintree.dropin.create(braintreeConfiguration, function(createErr, instance) {
     form.addEventListener('submit', function(e) {
+      if (inputField.dataset.skip == "true" || inputField.dataset.skip == true) {
+        return
+      }
       e.preventDefault();
       instance.requestPaymentMethod(function(requestPaymentMethodErr, payload) {
         if (!requestPaymentMethodErr) {
